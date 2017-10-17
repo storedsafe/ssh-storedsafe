@@ -81,24 +81,24 @@ user@host.domain.cc[:port]
 
 Usage
 =====
-ssssh.py utilizes StoredSafe's REST API to lookup credentials and will require either that pre-authentication has been performed by the StoredSafe token handler CLI module (```storedsafe-tokenhandler.py```) and stored in an init file which location can be specified with the ```--rc``` option. 
+ssssh.py utilizes StoredSafe's REST API to lookup credentials and will require either that pre-authentication has been performed by the StoredSafe token handler CLI module ([storedsafe-tokenhandler.py](https://github.com/storedsafe/tokenhandler)) and stored in an init file which location can be specified with the ```--rc``` option. (By default ~/.storedsafe-client.rc)
 
-Other authentication options includes specifying a valid token (```--token```) or perform an on-line one-shot authentication (```--user```, ```--storedsafe``` and ```--apikey```)
+Other authentication options includes specifying a valid token (```--token```) or perform an on-line, one-shot authentication (```--user```, ```--storedsafe``` and ```--apikey```)
 
-Using pre-authenticated REST API to the StoredSafe appliance, obtain the password for the user "andreas" and login via SSHv2 to the host domain.cc.
+Using pre-authenticated REST API to the StoredSafe appliance, the user *sven* obtains the password for the user *andreas* (credentials which sven has been granted access to by an appropriate information owner in StoredSafe) and *sven* can silently use these credentials to login via SSHv2 to the host domain.cc.
 
 ```
-$ ssssh.py --verbose andreas@domain.cc
+[sven@client ~]$ ssssh.py --verbose andreas@domain.cc
 Found credentials for "andreas@domain.cc" (Object-ID 744 in Vault-ID 182)
 Connecting to "domain.cc" on port 22
 Last login: Sun Oct 15 19:55:20 2017 from clients.domain.cc
 [andreas@domain.cc ~]$
 ```
 
-It's also possible to authenticate in "one-shot" mode to StoredSafe to obtain the required credentials to log on to the remote server. Below, the StoredSafe user "sven" will use his StoredSafe account to obtain the password for the user "andreas@domain.cc" which will be used to open up an SSH connection to "domain.cc" and logon as the user "andreas" using the password obtained from StoredSafe.
+It's also possible to authenticate in one-shot mode to StoredSafe to obtain the required credentials to log on to the remote server. Below, the StoredSafe user *sven* will use his StoredSafe account to obtain the password for the user *andreas@domain.cc* which will be used to open up an SSH connection to *domain.cc* and logon as the user *andreas* using the password obtained from StoredSafe.
 
 ```
-$ ssssh.py -v --storedsafe safe.stored.safe --user sven --apikey myAPIKey andreas@10.44.44.203
+[sven@client ~]$ ssssh.py -v --storedsafe safe.stored.safe --user sven --apikey myAPIKey andreas@10.44.44.203
 Enter sven's passphrase:
 Press sven's Yubikey:
 Found credentials for "andreas@domain.cc" (Object-ID 744 in Vault-ID 182)
