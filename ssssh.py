@@ -1,11 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
 ssssh.py: Initiate a SSH session to a remote host. Obtain credentials from StoredSafe.
 """
 
-from __future__ import print_function
 import sys
 import os
 import os.path
@@ -20,6 +19,7 @@ import requests
 import json
 import paramiko
 from paramiko.py3compat import u
+# windows does not have termios...
 try:
     import termios
     import tty
@@ -28,9 +28,9 @@ except ImportError:
     has_termios = False
 
 __author__     = "Fredrik Soderblom"
-__copyright__  = "Copyright 2017, AB StoredSafe"
+__copyright__  = "Copyright 2020, AB StoredSafe"
 __license__    = "GPL"
-__version__    = "1.0.1"
+__version__    = "1.0.2"
 __maintainer__ = "Fredrik Soderblom"
 __email__      = "fredrik@storedsafe.com"
 __status__     = "Production"
@@ -139,7 +139,7 @@ def usage():
 
 def readrc(rc_file):
   if os.path.isfile(rc_file):
-    f = open(rc_file, 'rU')
+    f = open(rc_file, 'r')
     for line in f:
       if "token" in line:
         token = re.sub('token:([a-zA-Z0-9]+)\n$', r'\1', line)
@@ -220,11 +220,11 @@ def searchForCredentials(user, server):
     return(False)
 
   if (len(data['OBJECT'])): # Unless result is empty
-    for v in data['OBJECT'].iteritems():
-      if server == data['OBJECT'][v[0]]['public']['host']:
-        if user == data['OBJECT'][v[0]]['public']['username']:
-          if verbose: print("Found credentials for \"%s@%s\" (Object-ID %s in Vault-ID %s)" % (user, server, v[0], data['OBJECT'][v[0]]["groupid"]))
-          password = getPassword(v[0])
+    for object in data['OBJECT']:
+      if server == object['public']['host']:
+        if user == object['public']['username']:
+          if verbose: print("Found credentials for \"%s@%s\" (Object-ID %s in Vault-ID %s)" % (user, server, object['id'], object['groupid']))
+        password = getPassword(object['id'])
 
   if password:
     return(password)
@@ -239,7 +239,12 @@ def getPassword(id):
   if not r.ok:
     return(False)
 
-  return(data['OBJECT'][id]["crypted"]["password"])
+  try:
+    if (len(data['OBJECT'][0]['crypted']['password'])):
+      return(data['OBJECT'][0]['crypted']['password'])
+  except:
+    sys.stderr.write("WARNING: Could not find any credentials in Object-ID \"%s\".\n" % id)
+    return(False)
 
 def spawnShell(user, password, server, port):
   global debug, verbose
@@ -255,6 +260,10 @@ def spawnShell(user, password, server, port):
 
     try:
       client.connect(server, port, user, password)
+    except paramiko.ssh_exception.AuthenticationException:
+      print("Invalid credentials. Username or password incorrect.")
+      client.close()
+      sys.exit()
     except paramiko.ssh_exception.BadHostKeyException:
       print("Rejecting bad host key.")
       client.close()
@@ -267,10 +276,6 @@ def spawnShell(user, password, server, port):
       key_ascii = base64.encodestring(key.__str__()).replace('\n', '')
       if verbose: print("[%s]:%s %s %s" % (server, port, key_type, key_ascii))
       print("Rejecting unknown host key for %s. (%s)" % (server, key_type))
-      client.close()
-      sys.exit()
-    except paramiko.ssh_exception.AuthenticationException:
-      print("Invalid credentials. Username or password incorrect.")
       client.close()
       sys.exit()
     except socket.error: 
