@@ -147,7 +147,7 @@ def readrc(rc_file):
           print("ERROR: No valid token found in \"%s\". Have you logged in?" % rc_file)
           sys.exit()
       if "mysite" in line:
-        server = re.sub('mysite:([a-zA-Z0-9.]+)\n$', r'\1', line)
+        server = re.sub('mysite:([-a-zA-Z0-9_.]+)\n$', r'\1', line)
         if server == 'none':
           print("ERROR: No valid server specified in \"%s\". Have you logged in?" % rc_file)
           sys.exit()
